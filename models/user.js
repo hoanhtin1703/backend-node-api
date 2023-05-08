@@ -29,12 +29,12 @@
 const admin = require("firebase-admin");
 const bcrypt = require("bcryptjs");
 class userModel {
-  constructor(id, name, email, password, AuthType) {
+  constructor(id, name, email, password, userType) {
     this.id = id;
     this.name = name;
     this.email = email;
     this.password = password;
-    this.AuthType = AuthType;
+    this.userType = userType;
   }
 
   // Method to validate password

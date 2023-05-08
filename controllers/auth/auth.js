@@ -10,42 +10,62 @@ const firestore = database.firestore();
 //   const token = jwt.sign(data, JWT_SECRET_KEY, { expiresIn: "10h" });
 //   return token;
 // }
-
-module.exports.login = async (req, res) => {
+module.exports.hello = async (req, res) => {
   try {
-    const { email, password } = req.body;
-    const user = await firestore.collection("User");
+    const user = await firestore.collection("User").get();
     // Create a query against the collection.
-    let query = user.where("email", "=", email);
-    console.log(user);
-    const userDoc = query.docs[0];
-    const data = userDoc.data();
+    const categoryList = [];
+    user.forEach((doc) => {
+      const categoryModel = new userModel(
+        doc.id,
+        doc.data().name,
+        doc.data().email,
+        doc.data().password,
+        doc.data().userType
+      );
+      categoryList.push(categoryModel);
+    });
     return res.json({
       success: true,
       status: 400,
       message: "user Logged in",
-      data: data,
+      data: categoryList,
     });
-
-    // bcrypting the password and comparing with the one in db
-    // if (await bcrypt.compare(password, user.password)) {
-
-    //   const token = generateAuthToken({_id : user?._id, email : email})
-    //   user.token = token
-    //   user.save()
-
-    // }
-    // return res.json({
-    //   success: true,
-    //   status: 200,
-    //   message: "user Logged in",
-    //   data: user,
-    // });
-    // return res.json({
-    //     success: false,
-    //     status: 400,
-    //     message: "user credentials are not correct",
-    // })
+  } catch (error) {}
+};
+module.exports.login = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+    const user = await firestore
+      .collection("User")
+      .where("email", "==", req.body.email)
+      .where("password", "==", req.body.password)
+      .get();
+    if (user.empty) {
+      return res.json({
+        success: false,
+        status: 400,
+        message: "user does not exist with this email and password",
+      });
+    } else {
+      const categoryList = [];
+      user.forEach((doc) => {
+        const categoryModel = new userModel(
+          doc.id,
+          doc.data().name,
+          doc.data().email,
+          doc.data().password,
+          doc.data().userType
+        );
+        categoryList.push(categoryModel);
+      });
+      return res.json({
+        success: true,
+        status: 200,
+        message: "user Logged in",
+        data: categoryList,
+      });
+    }
   } catch (error) {
     return res.send(error.message);
   }

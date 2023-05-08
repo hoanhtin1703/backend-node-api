@@ -1,6 +1,8 @@
 const express = require("express");
 const app = express();
-
+const database = require("./config/database");
+const userModel = require("./models/user");
+const firestore = database.firestore();
 const port = process.env.PORT;
 var bodyParser = require("body-parser");
 const dotenv = require("dotenv");
@@ -35,6 +37,7 @@ const storage = multer.diskStorage({
 const upload = multer({ storage: storage });
 
 const {
+  hello,
   register,
   login,
   updateUser,
@@ -74,9 +77,7 @@ const {
 } = require("./controllers/user/wishlist");
 // const mongoose = require("./config/database")();
 
-app.get("/", (req, res) => {
-  res.send("Hello World!");
-});
+app.get("/", hello);
 
 // AUTH
 app.post("/register", register);
