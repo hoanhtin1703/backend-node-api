@@ -1,29 +1,42 @@
-const mongoose = require("mongoose")
+// const mongoose = require("mongoose");
+// const jwt = require("jsonwebtoken");
 
-const orderSchema = mongoose.Schema({
+// // const { TOKEN_KEY } = process.env
 
-    orderId : String,
-    user : {type:mongoose.Schema.Types.ObjectId, ref:'user', required:true},
-    items : 
-        [
-            {
-                productId : {type: mongoose.Schema.Types.ObjectId, ref : "product"}, 
-                categoryId : {type: mongoose.Schema.Types.ObjectId, ref : "categories"},
-                quantity : Number, 
-                price : Number
-            }
-        ],
-    amount : Number,
-    discount : Number,
-    shippingAddress : String,
-    status : {type : String, enum : ["pending", "shipped", "delivered"]},
-    country : {type : String},
-    city : {type : String},
-    zipcode : {type : String},
-    payment_type : {type : String, enum: ["cod","online"]},
-    shippedOn : {type : String},
-    deliveredOn : {type : String}
+// const userSchema = mongoose.Schema(
+//   {
+//     name: String,
+//     email: { type: String, required: true, unique: true },
+//     userType: String,
+//     password: String,
+//     token: String,
+//     wishlist: [
+//       {
+//         productId: { type: mongoose.Schema.Types.ObjectId, ref: "product" },
+//         quantity: Number,
+//       },
+//     ],
+//   },
+//   { timestamps: true }
+// );
 
-}, { timestamps : true })
+// // userSchema.methods.generateAuthToken = function () {
+// //     this.token = jwt.sign({ userID: this._id, email: this.email }, TOKEN_KEY, { expiresIn: '10h' })
+// // }
 
-module.exports = mongoose.model("order", orderSchema)
+// module.exports = mongoose.model("user", userSchema);
+//
+const admin = require("firebase-admin");
+const bcrypt = require("bcryptjs");
+class OrderModel {
+  constructor(orderId, user, item, info, status, payment_type, createdAt) {
+    this.orderId = orderId;
+    this.user = user;
+    this.item = item;
+    this.info = info;
+    this.status = status;
+    this.payment_type = payment_type;
+    this.createdAt = createdAt;
+  }
+}
+module.exports = OrderModel;

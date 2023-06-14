@@ -1,124 +1,134 @@
-const categoryModel = require("../../models/category")
-
+// const categoryModel = require("../../models/category")
+const express = require("express");
+var app = express();
+const util = require("util");
+const multer = require("multer");
+const CategoryModel = require("../../models/category");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const database = require("../../config/database");
+const path = require("path");
+const bodyParser = require("body-parser");
+const cors = require("cors");
+const firestore = database.firestore();
+app.use(express.json());
+// for parsing application/x-www-form-urlencoded
+app.use(express.urlencoded({ extended: true }));
+// for parsing multipart/form-data
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+// TODO ADD category
 module.exports.addCategory = async (req, res) => {
-    try{
-
-        const {title, description, image} = req.body;
-
-        if(!title || !description) return res.send("Fields are empty")
-
-        let category = new categoryModel(req.body)
-        category.save()
-
-        return res.json({
-            success : true,
-            message : "category inserted successfully",
-            data : category
-        })
-
-    }catch(error){
-        return res.send(error.message)
+  try {
+    let idCurrent; //Id hiện tại
+    const getSizeCategory = await firestore
+      .collection("Category")
+      .get()
+      .then((snap) => {
+        idCurrent = snap.size;
+      });
+    // ?? Lấy kích thước của document
+    const newindex = (idCurrent + 1).toString(); //* Đổi kiểu int sang string
+    // ?? Thực Hiện Thêm Danh Mục
+    const category = await firestore.collection("Category").doc(newindex);
+    await category.set({
+      id: idCurrent + 1,
+      name: req.body.name,
+      image_url: req.file["filename"],
+    });
+    const msg = {
+      success: true,
+      status: 200,
+      message: "Thêm thành công",
+    };
+    res.status(200).send(msg);
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+};
+// TODO Update category
+module.exports.updateCategory = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const category = await firestore.collection("Category").doc(id);
+    // ??
+    if (!req.file) {
+      await category.update({
+        name: req.body.name,
+      });
     }
-}
+    // ??
+    else {
+      await category.update({
+        name: req.body.name,
+        image_url: req.file["filename"],
+      });
+    }
+    res.status(200).send({
+      success: true,
+      message: "Cập Nhật Thành Công",
+    });
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+};
+// TODO Delete category
+module.exports.deleteCategory = async (req, res) => {
+  try {
+    const id = req.params.id;
+    console.log(id);
+    const DeleteCategory = await firestore.collection("Category").doc(id);
+    await DeleteCategory.delete();
+    res.status(200).send({
+      success: true,
+      status: 0,
+      message: "Xóa thành công",
+    });
+  } catch (error) {
+    res.status(400).send(error.message);
+  }
+};
 
 module.exports.getCategories = async (req, res) => {
-    try{
+  try {
+    const category = await firestore.collection("Category").get();
+    // const categoriesCount = await categoryModel.find().count();
 
-        const categories = await categoryModel.find();
-        const categoriesCount = await categoryModel.find().count();
-
-        return res.json({
-            success : true,
-            status : 400,
-            message : "list of all categories",
-            categories,
-            count : categoriesCount
-        })
-
-    }catch(error){
-        return res.send(error.message)
+    // Create a query against the collection.
+    const cateList = [];
+    category.forEach((doc) => {
+      const categoryModel = new CategoryModel(
+        doc.id,
+        doc.data().name,
+        doc.data().image_url
+      );
+      cateList.push(categoryModel);
+    });
+    return res.json({
+      success: true,
+      status: 200,
+      message: "list of all categories",
+      category: cateList,
+    });
+  } catch (error) {
+    return res.send(error.message);
+  }
+};
+module.exports.getSinglecategories = async (req, res) => {
+  try {
+    const category = await firestore.collection("Category").doc(req.params.id);
+    const list = await category.get();
+    if (list.empty) {
+      res.status(400).send(error.message);
+    } else {
+      return res.json({
+        success: true,
+        status: 200,
+        message: "list of all categories",
+        category: list.data(), // convert to JSON object
+      });
     }
-}
-
-
-module.exports.updateCategory = async (req, res) => {
-    try{
-
-        const {title, description, image} = req.body;
-        const {id} = req.query;
-
-        // check if product exist with the given product id
-        const category = await categoryModel.findOne({_id : id})
-
-        if(category){
-            const updatedCategory = await categoryModel.findOneAndUpdate({_id : id}, req.body, {new :true})
-
-            return res.json({
-                success : true,
-                status : 200,  
-                message : "category updated successfully",
-                data : updatedCategory
-            })
-        }else{
-            
-            return res.json({
-                success : false,
-                status : 400,
-                message : "category does not exist"
-            })
-
-        }
-
-    }catch(error){
-        return res.send(error.message)
-    }
-}
-
-module.exports.deleteCategory = async (req, res) => {
-    try{
-
-        const {id} = req.query;
-        
-        // check if product exist with the given product id
-        const category = await categoryModel.findOneAndDelete({_id : id})
-        if(!category){
-            return res.json({
-                success : false,
-                message : "category does not exist",
-            })
-        }
-        return res.json({
-            success : true,
-            message : "category deleted successfully",
-        })
-
-    }catch(error){
-        return res.send(error.message)
-    } 
-}
-
-// module.exports.getAllProducts = async (req, res) => {
-//     try{
-
-//         // Search through title names
-//         var {search} = req.query
-//         if(!search) search = ""
-
-//         const products = await categoryModel.find({title:{'$regex' : search, '$options' : 'i'}})
-
-//         return res.json({
-//             success : true,
-//             status : 200,
-//             message : "list of products",
-//             data : products
-//         })
-
-//     }catch(error){
-//         return res.json({
-//             success : false,
-//             status : 400,
-//             message : error.message
-//         })
-//     }
-// }
-
+  } catch (error) {
+    return res.send(error.message);
+  }
+};

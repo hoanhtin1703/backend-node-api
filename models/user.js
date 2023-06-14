@@ -36,10 +36,5 @@ class userModel {
     this.password = password;
     this.userType = userType;
   }
-
-  // Method to validate password
-  //   async validatePassword(password) {
-  //     return await bcrypt.compare(password, this.password);
-  //   }
 }
 module.exports = userModel;

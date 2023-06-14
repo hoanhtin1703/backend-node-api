@@ -4,12 +4,7 @@ const jwt = require("jsonwebtoken");
 const database = require("../../config/database");
 const cors = require("cors");
 const firestore = database.firestore();
-// const JWT_SECRET_KEY = process.env.TOKEN_KEY;
 
-// function generateAuthToken(data) {
-//   const token = jwt.sign(data, JWT_SECRET_KEY, { expiresIn: "10h" });
-//   return token;
-// }
 module.exports.hello = async (req, res) => {
   try {
     const user = await firestore.collection("User").get();
@@ -48,22 +43,22 @@ module.exports.login = async (req, res) => {
         message: "user does not exist with this email and password",
       });
     } else {
-      const categoryList = [];
+      const userList = [];
       user.forEach((doc) => {
-        const categoryModel = new userModel(
+        const usermodel = new userModel(
           doc.id,
           doc.data().name,
           doc.data().email,
           doc.data().password,
           doc.data().userType
         );
-        categoryList.push(categoryModel);
+        userList.push(usermodel);
       });
       return res.json({
         success: true,
         status: 200,
         message: "user Logged in",
-        data: categoryList,
+        data: userList,
       });
     }
   } catch (error) {
@@ -73,25 +68,31 @@ module.exports.login = async (req, res) => {
 
 module.exports.register = async (req, res) => {
   try {
-    const { email, password, name, userType } = req.body;
-
-    // if any one of the field from email and password is not filled
-    if (!email || !password) {
+    const { email, password, name } = req.body;
+    const emailexist = await firestore
+      .collection("User")
+      .where("email", "==", req.body.email)
+      .get();
+    if (emailexist.empty) {
+      const user = await firestore.collection("User").doc();
+      await user.set({
+        name: name,
+        email: email,
+        password: password,
+        userType: "USER",
+      });
+      return res.json({
+        success: true,
+        status: 200,
+        message: "Register successfully",
+      });
+    } else {
       return res.json({
         success: false,
-        message: "email or password is empty",
+        status: 400,
+        message: "Email is already exists",
       });
     }
-    req.body.password = await bcrypt.hash(password, 10);
-
-    let user = new userModel(req.body);
-    await user.save();
-
-    return res.json({
-      success: true,
-      message: "user registered successfully",
-      data: user,
-    });
   } catch (error) {
     return res.send(error.message);
   }
